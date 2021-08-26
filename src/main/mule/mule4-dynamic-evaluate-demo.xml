@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="9e8ca5f4-78c3-40d7-92b6-fb0ae7403d79" >
+        <http:listener-connection host="${http.host}" port="${http.port}" />
+    </http:listener-config>
+    <configuration-properties doc:name="Configuration properties" doc:id="8b25eb38-4147-409c-aad6-b6603d5930f3" file="devtriumph-dev.yaml" />
+    <flow name="mule4-dynamic-evaluate-demo-flow" doc:id="6c8d0198-1f9f-4872-852f-b68fc6eb8573" >
+        <http:listener doc:name="HTTP Listener" doc:id="33312d71-a3e6-46c7-868e-f4690f1d71e6" config-ref="HTTP_Listener_config" path="${http.path}"/>
+        <ee:transform doc:name="set dwl variable" doc:id="65711d3f-e669-42b9-ab45-bf1b86603bc0" >
+            <ee:message >
+            </ee:message>
+            <ee:variables >
+                <ee:set-variable variableName="script" ><![CDATA[%dw 2.0
+output application/java
+---
+if (attributes.queryParams.source_system == "Pega")
+	readUrl ('classpath://pega.dwl','text/plain')
+else if (attributes.queryParams.source_system == "Guidewire")
+	readUrl ('classpath://guidewire.dwl','text/plain')
+else 
+	readUrl ('classpath://invalid-source.dwl','text/plain')
+]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:dynamic-evaluate doc:name="dynamic evaluate component" doc:id="27057912-380c-4c67-944e-51a56167cd0f" expression="#[vars.script]"/>
+        <logger level="INFO" doc:name="log payload" doc:id="16ce5bfb-bfbc-47bf-9051-45a37ae665f5" message="#[payload]"/>
+    </flow>
+</mule>
